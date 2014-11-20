@@ -28,15 +28,41 @@ static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 
 	switch(blue_action(q->dscp_factor, skb)) {
 		case DROP:
-
+			blue_increase_prob();
+			goto congestion_drop;
 		case RETAIN:
-
+			printk(KERN_INFO "Packet not marked by BLUE");
+			ret = qdisc_enqueue(skb, child);
+			if (likely(ret == NET_XMIT_SUCCESS)) {
+				sch->q.qlen++;
+			} else if (net_xmit_drop_count(ret)) {
+				q->stats.pdrop++;
+				sch->qstats.drops++;
+			}
+			return ret;
 		case IDLE:
+			blue_decrease_prob();
+			break;
 	}
+
+congestion_drop:
+		printk(KERN_INFO "Packet dropped by BLUE");
+		qdisc_drop(skb, sch);
+		return NET_XMIT_CN;
+	
 }
 
 static struct sk_buff *blue_csc573_dequeue(struct Qdisc *sch){
+	struct sk_buff *skb;
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
+	struct Qdisc *child = q->qdisc;
 
+	skb = child->dequeue(child);
+	if(skb) {
+		qdisc_bstats_update(sch,skb);
+		sch->q.qlen--;
+	}
+	return skb;
 }
 
 static struct sk_buff *blue_csc573_peek(struct Qdisc *sch){
@@ -47,7 +73,18 @@ static struct sk_buff *blue_csc573_peek(struct Qdisc *sch){
 }
 
 static unsigned int blue_csc573_drop(struct Qdisc *sch){
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
+	struct Qdisc *child = q->qdisc;
+	unsigned int len;
 
+	if (child->ops->drop) && (len = child->ops->drop(child)) > 0) {
+		q->stats.other++;
+		sch->qstats.drops++;
+		sch->q.qlen--;
+		return len;
+	}
+
+	return 0;
 }
 
 static void blue_csc573_reset(struct Qdisc *sch){
