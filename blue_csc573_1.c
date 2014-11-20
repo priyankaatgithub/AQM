@@ -11,7 +11,28 @@ struct blue_csc573_sched_data {
 };
 
 static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
+	struct Qdisc *child = q->qdisc;
 
+	q->dscp = ipv4_get_dsfield(ip_hdr(skb)) >> 2;
+	switch (q->dscp) {
+		case 0x32:
+			q->dscp_factor = 0.5;
+		case 0x46:
+			q->dscp_factor = 0.7;
+		case 0x00:
+			q->dscp_factor = 0.9;
+		default:
+			q->dscp_factor = 0.9;
+	}
+
+	switch(blue_action(q->dscp_factor, skb)) {
+		case DROP:
+
+		case RETAIN:
+
+		case IDLE:
+	}
 }
 
 static struct sk_buff *blue_csc573_dequeue(struct Qdisc *sch){
@@ -19,7 +40,10 @@ static struct sk_buff *blue_csc573_dequeue(struct Qdisc *sch){
 }
 
 static struct sk_buff *blue_csc573_peek(struct Qdisc *sch){
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
+	struct Qdisc *child = q->qdisc;
 
+	return child->ops->peek(child);
 }
 
 static unsigned int blue_csc573_drop(struct Qdisc *sch){
@@ -39,7 +63,10 @@ static int blue_csc573_change(struct Qdisc *sch, struct nlattr *opt){
 }
 
 static int blue_csc573_init(struct Qdisc *sch, struct nlattr *opt){
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
 
+	q->qdisc = &noop_qdisc;
+	return blue_csc573_change(sch,opt);
 }
 
 static int blue_csc573_dump(struct Qdisc *sch, struct sk_buff *skb){
