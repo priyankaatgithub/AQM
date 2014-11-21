@@ -5,8 +5,11 @@
 #include <linux/random.h>
 #include <net/pkt_sched.h>
 #include <net/inet_ecn.h>
-#include <net/blue.h>
+//#include <net/blue.h>
 #include <time.h>
+
+#define DROP 1
+#define RETAIN 0
 
 struct blue_csc573_sched_data {
 	u8		dscp,
@@ -70,9 +73,14 @@ static inline void blue_change_prob(int direction){
 }
 
 static inline char blue_action(float dscp_factor, struct sk_buff *skb){
-	int i, bounded_rand;
-	get_random_bytes(&i, sizeof(int));
-	bounded_rand = i % 100;
+	float i, bounded_rand;
+	get_random_bytes(&i, sizeof(float));
+	bounded_rand = i % 1;
+
+	if(bounded_rand*dscp_factor < probability) {
+		return DROP;
+	}
+	else return RETAIN;
 }
 
 static struct sk_buff *blue_csc573_dequeue(struct Qdisc *sch){
