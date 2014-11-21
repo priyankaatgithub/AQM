@@ -23,7 +23,8 @@ static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
 	struct Qdisc *child = q->qdisc;
 
-	q->dscp = ipv4_get_dsfield(ip_hdr(skb)) >> 2;
+	q->dscp = ipv4_get_dsfield(ip_hdr(skb));
+	q->dscp = q->dscp & 0xFC;
 	switch (q->dscp) {
 		case 48:
 			q->dscp_factor = 0.5;
@@ -134,7 +135,9 @@ static inline void blue_set_initial(struct blue_csc573_sched_data *q) {
 }
 
 static void blue_csc573_destroy(struct Qdisc *sch){
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
 
+	qdisc_destroy(q->qdisc);
 }
 
 static int blue_csc573_change(struct Qdisc *sch, struct nlattr *opt){
@@ -144,8 +147,7 @@ static int blue_csc573_change(struct Qdisc *sch, struct nlattr *opt){
 static int blue_csc573_init(struct Qdisc *sch, struct nlattr *opt){
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
 
-	old_time = jiffies;
-	probability = 0.1;
+	blue_set_initial(*q);
 
 	q->qdisc = &noop_qdisc;
 	return blue_csc573_change(sch,opt);
