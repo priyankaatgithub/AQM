@@ -2,6 +2,7 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/skbuff.h>
+#include <linux/random.h>
 #include <net/pkt_sched.h>
 #include <net/inet_ecn.h>
 #include <net/blue.h>
@@ -62,8 +63,16 @@ congestion_drop:
 static inline void blue_change_prob(int direction){
 	if(jiffies - 1 > old_time){
 		old_time = jiffies;
-		if(direction)
+		if(direction) probability = probability + 0.01;
+		else probability = probability - 0.01;
+		printk(KERN_INFO "BLUE probability changed to %f\n", probability);
 	}
+}
+
+static inline char blue_action(float dscp_factor, struct sk_buff *skb){
+	int i, bounded_rand;
+	get_random_bytes(&i, sizeof(int));
+	bounded_rand = i % 100;
 }
 
 static struct sk_buff *blue_csc573_dequeue(struct Qdisc *sch){
@@ -117,6 +126,7 @@ static int blue_csc573_init(struct Qdisc *sch, struct nlattr *opt){
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
 
 	old_time = jiffies;
+	probability = 0.1;
 
 	q->qdisc = &noop_qdisc;
 	return blue_csc573_change(sch,opt);
