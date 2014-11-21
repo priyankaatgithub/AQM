@@ -134,7 +134,7 @@ struct red_parms {
 	u32		qth_delta;	/* max_th - min_th */
 	u32		target_min;	/* min_th + 0.4*(max_th - min_th) */
 	u32		target_max;	/* min_th + 0.6*(max_th - min_th) */
-	u32		dscp;		/* use dscp to indicate priority class0, class1, and class2 */
+	u8		dscp;		/* use dscp to indicate priority class0, class1, and class2 */
 	u8		Scell_log;
 	u8		Wlog;		/* log(W)		*/
 	u8		Plog;		/* random number bits	*/

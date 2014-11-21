@@ -67,7 +67,7 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	if(q->parms.dscp == 0x46)	q->vars.dscp_factor = 0.7;
 	if(q->parms.dscp == 0x00)	q->vars.dscp_factor = 0.9;
 
-	printk(KERN_INFO "Packet DSCP is %h\n", q->parms.dscp);
+	printk(KERN_INFO "Packet DSCP is %u\n", q->parms.dscp);
 	
 	q->vars.qavg = red_calc_qavg(&q->parms,
 				     &q->vars,

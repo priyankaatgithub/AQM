@@ -13,6 +13,7 @@ struct blue_csc573_sched_data {
 };
 
 unsigned long old_time;
+float probability;
 
 static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
