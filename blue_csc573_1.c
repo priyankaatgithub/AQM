@@ -5,10 +5,14 @@
 #include <net/pkt_sched.h>
 #include <net/inet_ecn.h>
 #include <net/blue.h>
+#include <time.h>
 
 struct blue_csc573_sched_data {
-
+	u8		dscp,
+	float	dscp_factor,
 };
+
+unsigned long old_time;
 
 static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
@@ -26,9 +30,14 @@ static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 			q->dscp_factor = 0.9;
 	}
 
+	if(!skb) {
+		blue_change_prob(0);
+		return 0;
+	}	
+
 	switch(blue_action(q->dscp_factor, skb)) {
 		case DROP:
-			blue_increase_prob();
+			blue_change_prob(1);
 			goto congestion_drop;
 		case RETAIN:
 			printk(KERN_INFO "Packet not marked by BLUE");
@@ -40,9 +49,6 @@ static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 				sch->qstats.drops++;
 			}
 			return ret;
-		case IDLE:
-			blue_decrease_prob();
-			break;
 	}
 
 congestion_drop:
@@ -50,6 +56,13 @@ congestion_drop:
 		qdisc_drop(skb, sch);
 		return NET_XMIT_CN;
 	
+}
+
+static inline void blue_change_prob(int direction){
+	if(jiffies - 1 > old_time){
+		old_time = jiffies;
+		if(direction)
+	}
 }
 
 static struct sk_buff *blue_csc573_dequeue(struct Qdisc *sch){
@@ -101,6 +114,8 @@ static int blue_csc573_change(struct Qdisc *sch, struct nlattr *opt){
 
 static int blue_csc573_init(struct Qdisc *sch, struct nlattr *opt){
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
+
+	old_time = jiffies;
 
 	q->qdisc = &noop_qdisc;
 	return blue_csc573_change(sch,opt);
