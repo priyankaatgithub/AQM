@@ -66,6 +66,8 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	if(q->parms.dscp == 0x32)	q->vars.dscp_factor = 0.5;
 	if(q->parms.dscp == 0x46)	q->vars.dscp_factor = 0.7;
 	if(q->parms.dscp == 0x00)	q->vars.dscp_factor = 0.9;
+
+	printk(KERN_INFO "Packet DSCP is %h\n" q->parms.dscp);
 	
 	q->vars.qavg = red_calc_qavg(&q->parms,
 				     &q->vars,
@@ -76,7 +78,7 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 
 	switch (red_action(&q->parms, &q->vars, q->vars.qavg)) {
 	case RED_DONT_MARK:
-		printk(KERN_INFO "Packet not marked in RED_CSC573\n");
+		//printk(KERN_INFO "Packet not marked in RED_CSC573\n");
 		break;
 
 	case RED_PROB_MARK:
@@ -87,7 +89,7 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 		}
 
 		q->stats.prob_mark++;
-		printk(KERN_INFO "Packet in RED_PROB_MARK in RED_CSC573\n");
+		//printk(KERN_INFO "Packet in RED_PROB_MARK in RED_CSC573\n");
 		break;
 
 	case RED_HARD_MARK:
@@ -112,7 +114,7 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	return ret;
 
 congestion_drop:
-	printk(KERN_INFO "Packet dropped from RED_CSC573\n");
+	//printk(KERN_INFO "Packet dropped from RED_CSC573\n");
 	qdisc_drop(skb, sch);
 	return NET_XMIT_CN;
 }
