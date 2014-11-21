@@ -12,12 +12,12 @@
 #define RETAIN 0
 
 struct blue_csc573_sched_data {
-	u8		dscp,
-	float	dscp_factor,
+	u8				dscp;
+	float			dscp_factor;
+	unsigned long	old_time;
+	float			probability;
+	struct Qdisc 	*qdisc;
 };
-
-unsigned long old_time;
-float probability;
 
 static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
@@ -25,11 +25,11 @@ static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 
 	q->dscp = ipv4_get_dsfield(ip_hdr(skb)) >> 2;
 	switch (q->dscp) {
-		case 0x32:
+		case 48:
 			q->dscp_factor = 0.5;
-		case 0x46:
+		case 68:
 			q->dscp_factor = 0.7;
-		case 0x00:
+		case 0:
 			q->dscp_factor = 0.9;
 		default:
 			q->dscp_factor = 0.9;
@@ -63,12 +63,14 @@ congestion_drop:
 	
 }
 
-static inline void blue_change_prob(int direction){
-	if(jiffies - 1 > old_time){
-		old_time = jiffies;
-		if(direction) probability = probability + 0.01;
-		else probability = probability - 0.01;
-		printk(KERN_INFO "BLUE probability changed to %f\n", probability);
+static inline void blue_change_prob(int direction, struct Qdisc *sch){
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
+
+	if(jiffies - 1 > q->old_time){
+		q->old_time = jiffies;
+		if(direction) q->probability = q->probability + 0.01;
+		else q->probability = q->probability - 0.01;
+		printk(KERN_INFO "BLUE probability changed to %f\n", q->probability);
 	}
 }
 
@@ -77,7 +79,7 @@ static inline char blue_action(float dscp_factor, struct sk_buff *skb){
 	get_random_bytes(&i, sizeof(float));
 	bounded_rand = i % 1;
 
-	if(bounded_rand*dscp_factor < probability) {
+	if(bounded_rand*dscp_factor < q->probability) {
 		return DROP;
 	}
 	else return RETAIN;
@@ -119,7 +121,16 @@ static unsigned int blue_csc573_drop(struct Qdisc *sch){
 }
 
 static void blue_csc573_reset(struct Qdisc *sch){
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
 
+	qdisc_reset(q->qdisc);
+	sch->q.qlen = 0;
+	blue_set_initial(q);
+}
+
+static inline void blue_set_initial(struct blue_csc573_sched_data *q) {
+	q->old_time = jiffies;
+	q->probability = 0.1;
 }
 
 static void blue_csc573_destroy(struct Qdisc *sch){
