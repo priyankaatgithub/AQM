@@ -1,4 +1,4 @@
-obj-m +=red_csc573.o
+obj-m +=blue_csc573_1.o
 
 all:
 	make	-C/lib/modules/$(shell uname -r)/build M=$(PWD) modules

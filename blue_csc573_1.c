@@ -5,8 +5,7 @@
 #include <linux/random.h>
 #include <net/pkt_sched.h>
 #include <net/inet_ecn.h>
-//#include <net/blue.h>
-#include <time.h>
+#include <linux/jiffies.h>
 
 #define DROP 1
 #define RETAIN 0
@@ -15,9 +14,31 @@ struct blue_csc573_sched_data {
 	u8				dscp;
 	float			dscp_factor;
 	unsigned long	old_time;
-	float			probability;
+	int			probability;
 	struct Qdisc 	*qdisc;
 };
+
+static inline char blue_action(float dscp_factor, int probability, struct sk_buff *skb){
+	int i, bounded_rand;
+	get_random_bytes(&i, sizeof(float));
+	bounded_rand = i % 100;
+
+	if(bounded_rand < probability*dscp_factor) {
+		return DROP;
+	}
+	else return RETAIN;
+}
+
+static inline void blue_change_prob(int direction, struct Qdisc *sch){
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
+
+	if(jiffies - 1 > q->old_time){
+		q->old_time = jiffies;
+		if(direction) q->probability = q->probability + 1;
+		else q->probability = q->probability - 1;
+		printk(KERN_INFO "BLUE probability changed to %d\n", q->probability);
+	}
+}
 
 static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
@@ -37,21 +58,21 @@ static int blue_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch) {
 	}
 
 	if(!skb) {
-		blue_change_prob(0);
+		blue_change_prob(0, sch);
 		return 0;
 	}	
 
-	switch(blue_action(q->dscp_factor, skb)) {
+	switch(blue_action(q->dscp_factor, q->probability, skb)) {
 		case DROP:
-			blue_change_prob(1);
+			blue_change_prob(1, sch);
 			goto congestion_drop;
 		case RETAIN:
 			printk(KERN_INFO "Packet not marked by BLUE");
-			ret = qdisc_enqueue(skb, child);
+			int ret = qdisc_enqueue(skb, child);
 			if (likely(ret == NET_XMIT_SUCCESS)) {
 				sch->q.qlen++;
 			} else if (net_xmit_drop_count(ret)) {
-				q->stats.pdrop++;
+				//q->stats.pdrop++;
 				sch->qstats.drops++;
 			}
 			return ret;
@@ -62,28 +83,6 @@ congestion_drop:
 		qdisc_drop(skb, sch);
 		return NET_XMIT_CN;
 	
-}
-
-static inline void blue_change_prob(int direction, struct Qdisc *sch){
-	struct blue_csc573_sched_data *q = qdisc_priv(sch);
-
-	if(jiffies - 1 > q->old_time){
-		q->old_time = jiffies;
-		if(direction) q->probability = q->probability + 0.01;
-		else q->probability = q->probability - 0.01;
-		printk(KERN_INFO "BLUE probability changed to %f\n", q->probability);
-	}
-}
-
-static inline char blue_action(float dscp_factor, struct sk_buff *skb){
-	float i, bounded_rand;
-	get_random_bytes(&i, sizeof(float));
-	bounded_rand = i % 1;
-
-	if(bounded_rand*dscp_factor < q->probability) {
-		return DROP;
-	}
-	else return RETAIN;
 }
 
 static struct sk_buff *blue_csc573_dequeue(struct Qdisc *sch){
@@ -111,14 +110,19 @@ static unsigned int blue_csc573_drop(struct Qdisc *sch){
 	struct Qdisc *child = q->qdisc;
 	unsigned int len;
 
-	if (child->ops->drop) && (len = child->ops->drop(child)) > 0) {
-		q->stats.other++;
+	if ((child->ops->drop) && (len = child->ops->drop(child)) > 0) {
+		//q->stats.other++;
 		sch->qstats.drops++;
 		sch->q.qlen--;
 		return len;
 	}
 
 	return 0;
+}
+
+static inline void blue_set_initial(struct blue_csc573_sched_data *q) {
+	q->old_time = jiffies;
+	q->probability = 10;
 }
 
 static void blue_csc573_reset(struct Qdisc *sch){
@@ -129,11 +133,6 @@ static void blue_csc573_reset(struct Qdisc *sch){
 	blue_set_initial(q);
 }
 
-static inline void blue_set_initial(struct blue_csc573_sched_data *q) {
-	q->old_time = jiffies;
-	q->probability = 0.1;
-}
-
 static void blue_csc573_destroy(struct Qdisc *sch){
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
 
@@ -141,17 +140,21 @@ static void blue_csc573_destroy(struct Qdisc *sch){
 }
 
 static int blue_csc573_change(struct Qdisc *sch, struct nlattr *opt){
-
+	struct blue_csc573_sched_data *q = qdisc_priv(sch);
+	blue_set_initial(q);
+	return 1;
 }
 
 static int blue_csc573_init(struct Qdisc *sch, struct nlattr *opt){
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
 
-	blue_set_initial(*q);
+	blue_set_initial(q);
 
 	q->qdisc = &noop_qdisc;
 	return blue_csc573_change(sch,opt);
 }
+
+/*
 
 static int blue_csc573_dump(struct Qdisc *sch, struct sk_buff *skb){
 
@@ -164,6 +167,8 @@ static int blue_csc573_dump_stats(struct Qdisc *sch, struct gnet_dump *d){
 static int blue_csc573_dump_class(struct Qdisc *sch, unsigned long cl, struct sk_buff *skb, struct tcmsg *tcm){
 
 }
+
+*/
 
 static int blue_csc573_graft(struct Qdisc *sch, unsigned long arg, struct Qdisc *new, struct Qdisc **old){
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
@@ -210,10 +215,10 @@ static const struct Qdisc_class_ops blue_csc573_class_ops = {
 	.get = blue_csc573_get,
 	.put = blue_csc573_put,
 	.walk = blue_csc573_walk,
-	.dump = blue_csc573_dump_class,
+	//.dump = blue_csc573_dump_class,
 };
 
-static Qdisc_ops blue_csc573_qdisc_ops __read_mostly = {
+static struct Qdisc_ops blue_csc573_qdisc_ops __read_mostly = {
 	.id = "blue_csc573",
 	.priv_size = sizeof(struct blue_csc573_sched_data),
 	.cl_ops = &blue_csc573_class_ops,
@@ -225,8 +230,8 @@ static Qdisc_ops blue_csc573_qdisc_ops __read_mostly = {
 	.reset = blue_csc573_reset,
 	.destroy = blue_csc573_destroy,
 	.change = blue_csc573_change,
-	.dump = blue_csc573_dump,
-	.dump_stats = blue_csc573_dump_stats,
+	//.dump = blue_csc573_dump,
+	//.dump_stats = blue_csc573_dump_stats,
 	.owner = THIS_MODULE,
 };
 
