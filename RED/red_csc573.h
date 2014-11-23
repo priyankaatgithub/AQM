@@ -347,8 +347,9 @@ enum {
 
 static inline int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
 {
-	printk(KERN_INFO "Entered red_cmp_thresh()");
+	printk(KERN_INFO "Entered red_cmp_thresh()\n");
 	if (qavg < p->qth_min)
+		printk(KERN_INFO "Queue below minimum threshold\n");
 		return RED_BELOW_MIN_THRESH;
 	else if (qavg >= p->qth_max)
 		return RED_ABOVE_MAX_TRESH;
@@ -367,7 +368,7 @@ static inline int red_action(const struct red_parms *p,
 			     struct red_vars *v,
 			     unsigned long qavg)
 {
-	printk(KERN_INFO "Entered red_action()");
+	printk(KERN_INFO "Entered red_action()\n");
 	switch (red_cmp_thresh(p, qavg)) {
 		case RED_BELOW_MIN_THRESH:
 			v->qcount = -1;
