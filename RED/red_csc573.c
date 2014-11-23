@@ -109,6 +109,7 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	ret = qdisc_enqueue(skb, child);
 	if (likely(ret == NET_XMIT_SUCCESS)) {
 		sch->q.qlen++;
+		printk("Packet enqueued. Current queue length %u\n", sch->q.qlen);
 	} else if (net_xmit_drop_count(ret)) {
 		q->stats.pdrop++;
 		sch->qstats.drops++;
