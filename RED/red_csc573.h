@@ -348,6 +348,7 @@ enum {
 static inline int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
 {
 	printk(KERN_INFO "Entered red_cmp_thresh()\n");
+	/*
 	if (qavg < p->qth_min){
 		printk(KERN_INFO "Queue %u below minimum threshold %u\n", qavg, p->qth_min);
 		return RED_BELOW_MIN_THRESH;}
@@ -356,7 +357,9 @@ static inline int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
 	else{
 		printk(KERN_INFO "Queue between thresholds");
 		return RED_BETWEEN_TRESH;}
-}
+}*/
+	printk(KERN_INFO "Bypassing compute");
+	return RED_BETWEEN_TRESH;
 
 enum {
 	RED_DONT_MARK,

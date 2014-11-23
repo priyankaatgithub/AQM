@@ -139,15 +139,12 @@ static void blue_csc573_destroy(struct Qdisc *sch){
 	qdisc_destroy(q->qdisc);
 }
 
-static const struct nla_policy blue_policy[TCA_RED_MAX + 1] = {
-	[TCA_RED_PARMS]	= { .len = sizeof(struct tc_red_qopt) },
-	[TCA_RED_STAB]	= { .len = RED_STAB_SIZE },
-	[TCA_RED_MAX_P] = { .type = NLA_U32 },
-};
-
 static int blue_csc573_change(struct Qdisc *sch, struct nlattr *opt){
 	struct blue_csc573_sched_data *q = qdisc_priv(sch);
 	blue_set_initial(q);
+
+	
+
 	return 1;
 }
 

@@ -75,7 +75,6 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 				     child->qstats.backlog);
 
 	if (red_is_idling(&q->vars)) {
-		red_set_vars(&q->vars);
 		red_end_of_idle_period(&q->vars);
 	}
 
