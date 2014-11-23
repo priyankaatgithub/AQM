@@ -349,7 +349,7 @@ static inline int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
 {
 	printk(KERN_INFO "Entered red_cmp_thresh()\n");
 	if (qavg < p->qth_min){
-		printk(KERN_INFO "Queue below minimum threshold\n");
+		printk(KERN_INFO "Queue %u below minimum threshold %u\n", qavg, p->qth_min);
 		return RED_BELOW_MIN_THRESH;}
 	else if (qavg >= p->qth_max)
 		return RED_ABOVE_MAX_TRESH;
