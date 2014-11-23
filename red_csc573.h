@@ -334,7 +334,7 @@ static inline int red_mark_probability(const struct red_parms *p,
 	 */
 	u32 comparison;
 	comparison = ((qavg - p->qth_min) >> p->Wlog)*v->dscp_factor* v->qcount;
-	printk(KERN_LOG "Comparing %u < %u", comparison, v->qR);
+	printk(KERN_LOG "Comparing ! %u < %u", comparison, v->qR);
 	return !(((qavg - p->qth_min) >> p->Wlog)*v->dscp_factor* v->qcount < v->qR);
 }
 
