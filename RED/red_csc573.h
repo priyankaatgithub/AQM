@@ -295,7 +295,7 @@ static inline unsigned long red_calc_qavg_no_idle_time(const struct red_parms *p
 	 * --ANK (980924)
 	 */
 	unsigned long avg = v->qavg + (backlog - (v->qavg >> p->Wlog));
-	printk(KERN_INFO "Average in red_calc_qavg_no_idle_time is %u", avg);
+	printk(KERN_INFO "Qavg: %u + (%u - (%u >> %u)) is %u", v->qavg, backlog, v->qavg, p->Wlog, avg);
 	return v->qavg + (backlog - (v->qavg >> p->Wlog));
 }
 
