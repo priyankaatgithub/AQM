@@ -74,8 +74,10 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 				     &q->vars,
 				     child->qstats.backlog);
 
-	if (red_is_idling(&q->vars))
+	if (red_is_idling(&q->vars)) {
+		red_set_vars(q->red_vars);
 		red_end_of_idle_period(&q->vars);
+	}
 
 	switch (red_action(&q->parms, &q->vars, q->vars.qavg)) {
 	case RED_DONT_MARK:
