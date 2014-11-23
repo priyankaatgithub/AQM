@@ -356,11 +356,11 @@ static inline int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
 		return RED_ABOVE_MAX_TRESH;
 	else{
 		printk(KERN_INFO "Queue between thresholds");
-		return RED_BETWEEN_TRESH;}
-}*/
+		return RED_BETWEEN_TRESH;} */
+
 	printk(KERN_INFO "Bypassing compute");
 	return RED_BETWEEN_TRESH;
-
+}
 enum {
 	RED_DONT_MARK,
 	RED_PROB_MARK,
