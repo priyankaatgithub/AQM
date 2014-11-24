@@ -65,6 +65,12 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	q->vars.qavg = red_calc_qavg(&q->parms,
 				     &q->vars,
 				     child->qstats.backlog);
+	printk(KERN_INFO "Qstats values:\n");
+	printk(KERN_INFO "    qlen:       %u\n", child->qstats.qlen);
+	printk(KERN_INFO "    backlog:    %u\n", child->qstats.backlog);
+	printk(KERN_INFO "    drops:      %u\n", child->qstats.drops);
+	printk(KERN_INFO "    requeues:   %u\n", child->qstats.requeues);
+	printk(KERN_INFO "    overlimits: %u\n", child->qstats.overlimits);
 
 	if (red_is_idling(&q->vars))
 		red_end_of_idle_period(&q->vars);
