@@ -36,7 +36,7 @@
 	if RED works correctly.
  */
 
-struct red_sched_data {
+struct red_csc573_sched_data {
 	u32			limit;		/* HARD maximal queue length */
 	unsigned char		flags;
 	struct timer_list	adapt_timer;
@@ -46,19 +46,19 @@ struct red_sched_data {
 	struct Qdisc		*qdisc;
 };
 
-static inline int red_use_ecn(struct red_sched_data *q)
+static inline int red_csc573_use_ecn(struct red_csc573_sched_data *q)
 {
 	return q->flags & TC_RED_ECN;
 }
 
-static inline int red_use_harddrop(struct red_sched_data *q)
+static inline int red_csc573_use_harddrop(struct red_csc573_sched_data *q)
 {
 	return q->flags & TC_RED_HARDDROP;
 }
 
-static int red_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 	struct Qdisc *child = q->qdisc;
 	int ret;
 
@@ -75,7 +75,7 @@ static int red_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 
 	case RED_PROB_MARK:
 		sch->qstats.overlimits++;
-		if (!red_use_ecn(q) || !INET_ECN_set_ce(skb)) {
+		if (!red_csc573_use_ecn(q) || !INET_ECN_set_ce(skb)) {
 			q->stats.prob_drop++;
 			goto congestion_drop;
 		}
@@ -85,7 +85,7 @@ static int red_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 
 	case RED_HARD_MARK:
 		sch->qstats.overlimits++;
-		if (red_use_harddrop(q) || !red_use_ecn(q) ||
+		if (red_csc573_use_harddrop(q) || !red_csc573_use_ecn(q) ||
 		    !INET_ECN_set_ce(skb)) {
 			q->stats.forced_drop++;
 			goto congestion_drop;
@@ -109,10 +109,10 @@ congestion_drop:
 	return NET_XMIT_CN;
 }
 
-static struct sk_buff *red_dequeue(struct Qdisc *sch)
+static struct sk_buff *red_csc573_dequeue(struct Qdisc *sch)
 {
 	struct sk_buff *skb;
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 	struct Qdisc *child = q->qdisc;
 
 	skb = child->dequeue(child);
@@ -126,17 +126,17 @@ static struct sk_buff *red_dequeue(struct Qdisc *sch)
 	return skb;
 }
 
-static struct sk_buff *red_peek(struct Qdisc *sch)
+static struct sk_buff *red_csc573_peek(struct Qdisc *sch)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 	struct Qdisc *child = q->qdisc;
 
 	return child->ops->peek(child);
 }
 
-static unsigned int red_drop(struct Qdisc *sch)
+static unsigned int red_csc573_drop(struct Qdisc *sch)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 	struct Qdisc *child = q->qdisc;
 	unsigned int len;
 
@@ -153,32 +153,32 @@ static unsigned int red_drop(struct Qdisc *sch)
 	return 0;
 }
 
-static void red_reset(struct Qdisc *sch)
+static void red_csc573_reset(struct Qdisc *sch)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 
 	qdisc_reset(q->qdisc);
 	sch->q.qlen = 0;
-	red_restart(&q->vars);
+	red_csc573_restart(&q->vars);
 }
 
-static void red_destroy(struct Qdisc *sch)
+static void red_csc573_destroy(struct Qdisc *sch)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 
 	del_timer_sync(&q->adapt_timer);
 	qdisc_destroy(q->qdisc);
 }
 
-static const struct nla_policy red_policy[TCA_RED_MAX + 1] = {
+static const struct nla_policy red_csc573_policy[TCA_RED_MAX + 1] = {
 	[TCA_RED_PARMS]	= { .len = sizeof(struct tc_red_qopt) },
 	[TCA_RED_STAB]	= { .len = RED_STAB_SIZE },
 	[TCA_RED_MAX_P] = { .type = NLA_U32 },
 };
 
-static int red_change(struct Qdisc *sch, struct nlattr *opt)
+static int red_csc573_change(struct Qdisc *sch, struct nlattr *opt)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 	struct nlattr *tb[TCA_RED_MAX + 1];
 	struct tc_red_qopt *ctl;
 	struct Qdisc *child = NULL;
@@ -188,7 +188,7 @@ static int red_change(struct Qdisc *sch, struct nlattr *opt)
 	if (opt == NULL)
 		return -EINVAL;
 
-	err = nla_parse_nested(tb, TCA_RED_MAX, opt, red_policy);
+	err = nla_parse_nested(tb, TCA_RED_MAX, opt, red_csc573_policy);
 	if (err < 0)
 		return err;
 
@@ -233,10 +233,10 @@ static int red_change(struct Qdisc *sch, struct nlattr *opt)
 	return 0;
 }
 
-static inline void red_adaptative_timer(unsigned long arg)
+static inline void red_csc573_adaptative_timer(unsigned long arg)
 {
 	struct Qdisc *sch = (struct Qdisc *)arg;
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 	spinlock_t *root_lock = qdisc_lock(qdisc_root_sleeping(sch));
 
 	spin_lock(root_lock);
@@ -245,18 +245,18 @@ static inline void red_adaptative_timer(unsigned long arg)
 	spin_unlock(root_lock);
 }
 
-static int red_init(struct Qdisc *sch, struct nlattr *opt)
+static int red_csc573_init(struct Qdisc *sch, struct nlattr *opt)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 
 	q->qdisc = &noop_qdisc;
-	setup_timer(&q->adapt_timer, red_adaptative_timer, (unsigned long)sch);
-	return red_change(sch, opt);
+	setup_timer(&q->adapt_timer, red_csc573_adaptative_timer, (unsigned long)sch);
+	return red_csc573_change(sch, opt);
 }
 
-static int red_dump(struct Qdisc *sch, struct sk_buff *skb)
+static int red_csc573_dump(struct Qdisc *sch, struct sk_buff *skb)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 	struct nlattr *opts = NULL;
 	struct tc_red_qopt opt = {
 		.limit		= q->limit,
@@ -282,9 +282,9 @@ nla_put_failure:
 	return -EMSGSIZE;
 }
 
-static int red_dump_stats(struct Qdisc *sch, struct gnet_dump *d)
+static int red_csc573_dump_stats(struct Qdisc *sch, struct gnet_dump *d)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 	struct tc_red_xstats st = {
 		.early	= q->stats.prob_drop + q->stats.forced_drop,
 		.pdrop	= q->stats.pdrop,
@@ -295,20 +295,20 @@ static int red_dump_stats(struct Qdisc *sch, struct gnet_dump *d)
 	return gnet_stats_copy_app(d, &st, sizeof(st));
 }
 
-static int red_dump_class(struct Qdisc *sch, unsigned long cl,
+static int red_csc573_dump_class(struct Qdisc *sch, unsigned long cl,
 			  struct sk_buff *skb, struct tcmsg *tcm)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 
 	tcm->tcm_handle |= TC_H_MIN(1);
 	tcm->tcm_info = q->qdisc->handle;
 	return 0;
 }
 
-static int red_graft(struct Qdisc *sch, unsigned long arg, struct Qdisc *new,
+static int red_csc573_graft(struct Qdisc *sch, unsigned long arg, struct Qdisc *new,
 		     struct Qdisc **old)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 
 	if (new == NULL)
 		new = &noop_qdisc;
@@ -322,22 +322,22 @@ static int red_graft(struct Qdisc *sch, unsigned long arg, struct Qdisc *new,
 	return 0;
 }
 
-static struct Qdisc *red_leaf(struct Qdisc *sch, unsigned long arg)
+static struct Qdisc *red_csc573_leaf(struct Qdisc *sch, unsigned long arg)
 {
-	struct red_sched_data *q = qdisc_priv(sch);
+	struct red_csc573_sched_data *q = qdisc_priv(sch);
 	return q->qdisc;
 }
 
-static unsigned long red_get(struct Qdisc *sch, u32 classid)
+static unsigned long red_csc573_get(struct Qdisc *sch, u32 classid)
 {
 	return 1;
 }
 
-static void red_put(struct Qdisc *sch, unsigned long arg)
+static void red_csc573_put(struct Qdisc *sch, unsigned long arg)
 {
 }
 
-static void red_walk(struct Qdisc *sch, struct qdisc_walker *walker)
+static void red_csc573_walk(struct Qdisc *sch, struct qdisc_walker *walker)
 {
 	if (!walker->stop) {
 		if (walker->count >= walker->skip)
@@ -349,43 +349,43 @@ static void red_walk(struct Qdisc *sch, struct qdisc_walker *walker)
 	}
 }
 
-static const struct Qdisc_class_ops red_class_ops = {
-	.graft		=	red_graft,
-	.leaf		=	red_leaf,
-	.get		=	red_get,
-	.put		=	red_put,
-	.walk		=	red_walk,
-	.dump		=	red_dump_class,
+static const struct Qdisc_class_ops red_csc573_class_ops = {
+	.graft		=	red_csc573_graft,
+	.leaf		=	red_csc573_leaf,
+	.get		=	red_csc573_get,
+	.put		=	red_csc573_put,
+	.walk		=	red_csc573_walk,
+	.dump		=	red_csc573_dump_class,
 };
 
-static struct Qdisc_ops red_qdisc_ops __read_mostly = {
-	.id		=	"red",
-	.priv_size	=	sizeof(struct red_sched_data),
-	.cl_ops		=	&red_class_ops,
-	.enqueue	=	red_enqueue,
-	.dequeue	=	red_dequeue,
-	.peek		=	red_peek,
-	.drop		=	red_drop,
-	.init		=	red_init,
-	.reset		=	red_reset,
-	.destroy	=	red_destroy,
-	.change		=	red_change,
-	.dump		=	red_dump,
-	.dump_stats	=	red_dump_stats,
+static struct Qdisc_ops red_csc573_qdisc_ops __read_mostly = {
+	.id		=	"red_csc573",
+	.priv_size	=	sizeof(struct red_csc573_sched_data),
+	.cl_ops		=	&red_csc573_class_ops,
+	.enqueue	=	red_csc573_enqueue,
+	.dequeue	=	red_csc573_dequeue,
+	.peek		=	red_csc573_peek,
+	.drop		=	red_csc573_drop,
+	.init		=	red_csc573_init,
+	.reset		=	red_csc573_reset,
+	.destroy	=	red_csc573_destroy,
+	.change		=	red_csc573_change,
+	.dump		=	red_csc573_dump,
+	.dump_stats	=	red_csc573_dump_stats,
 	.owner		=	THIS_MODULE,
 };
 
-static int __init red_module_init(void)
+static int __init red_csc573_module_init(void)
 {
-	return register_qdisc(&red_qdisc_ops);
+	return register_qdisc(&red_csc573_qdisc_ops);
 }
 
-static void __exit red_module_exit(void)
+static void __exit red_csc573_module_exit(void)
 {
-	unregister_qdisc(&red_qdisc_ops);
+	unregister_qdisc(&red_csc573_qdisc_ops);
 }
 
-module_init(red_module_init)
-module_exit(red_module_exit)
+module_init(red_csc573_module_init)
+module_exit(red_csc573_module_exit)
 
 MODULE_LICENSE("GPL");
