@@ -159,7 +159,7 @@ static void red_csc573_reset(struct Qdisc *sch)
 
 	qdisc_reset(q->qdisc);
 	sch->q.qlen = 0;
-	red_csc573_restart(&q->vars);
+	red_restart(&q->vars);
 }
 
 static void red_csc573_destroy(struct Qdisc *sch)
