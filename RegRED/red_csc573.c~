@@ -97,6 +97,7 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 
 	ret = qdisc_enqueue(skb, child);
 	if (likely(ret == NET_XMIT_SUCCESS)) {
+		printk(KERN_INFO "Packet enqueued\n");
 		sch->q.qlen++;
 	} else if (net_xmit_drop_count(ret)) {
 		q->stats.pdrop++;
@@ -159,7 +160,7 @@ static void red_csc573_reset(struct Qdisc *sch)
 
 	qdisc_reset(q->qdisc);
 	sch->q.qlen = 0;
-	red_csc573_restart(&q->vars);
+	red_restart(&q->vars);
 }
 
 static void red_csc573_destroy(struct Qdisc *sch)

@@ -97,6 +97,7 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 
 	ret = qdisc_enqueue(skb, child);
 	if (likely(ret == NET_XMIT_SUCCESS)) {
+		printk(KERN_INFO "Packet enqueued\n");
 		sch->q.qlen++;
 	} else if (net_xmit_drop_count(ret)) {
 		q->stats.pdrop++;
@@ -106,6 +107,7 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 
 congestion_drop:
 	qdisc_drop(skb, sch);
+	printk(KERN_INFO "Packet dropped\n");
 	return NET_XMIT_CN;
 }
 
