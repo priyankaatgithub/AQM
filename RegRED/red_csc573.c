@@ -72,6 +72,13 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	printk(KERN_INFO "    requeues:   %u\n", child->qstats.requeues);
 	printk(KERN_INFO "    overlimits: %u\n", child->qstats.overlimits);
 
+	printk(KERN_INFO "stats values:\n");
+	printk(KERN_INFO "    prob_drop:   %u\n", q->stats.prob_drop);
+	printk(KERN_INFO "    prob_mark:   %u\n", q->stats.prob_mark);
+	printk(KERN_INFO "    forced_drop: %u\n", q->stats.forced_drop);
+	printk(KERN_INFO "    forced_mark: %u\n", q->stats.forced_mark);
+	printk(KERN_INFO "    pdrop:       %u\n", q->stats.pdrop);
+
 	if (red_is_idling(&q->vars))
 		red_end_of_idle_period(&q->vars);
 
