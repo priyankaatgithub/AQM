@@ -295,7 +295,7 @@ static inline unsigned long red_calc_qavg(const struct red_parms *p,
 					  const struct red_vars *v,
 					  unsigned int backlog)
 {
-	printk(KERN_INFO "In red_calc_qavg(), backlog is %u", backlog);
+	printk(KERN_INFO "In red_calc_qavg(), backlog is %u\n", backlog);
 	if (!red_is_idling(v))
 		return red_calc_qavg_no_idle_time(p, v, backlog);
 	else
