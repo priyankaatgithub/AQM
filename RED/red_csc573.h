@@ -294,8 +294,6 @@ static inline unsigned long red_calc_qavg_no_idle_time(const struct red_parms *p
 	 *
 	 * --ANK (980924)
 	 */
-	unsigned long avg = v->qavg + (backlog - (v->qavg >> p->Wlog));
-	printk(KERN_INFO "Qavg: %u + (%u - (%u >> %u)) is %u", v->qavg, backlog, v->qavg, p->Wlog, avg);
 	return v->qavg + (backlog - (v->qavg >> p->Wlog));
 }
 
@@ -306,7 +304,6 @@ static inline unsigned long red_calc_qavg(const struct red_parms *p,
 	if (!red_is_idling(v))
 		return red_calc_qavg_no_idle_time(p, v, backlog);
 	else
-		printk(KERN_INFO "Nope. Not no_idle_time\n");
 		return red_calc_qavg_from_idle_time(p, v);
 }
 
@@ -336,9 +333,6 @@ static inline int red_mark_probability(const struct red_parms *p,
 
 	   Any questions? --ANK (980924)
 	 */
-	u32 comparison;
-	comparison = ((qavg - p->qth_min) >> p->Wlog)*v->dscp_factor* v->qcount;
-	printk(KERN_INFO "Comparing ! %u < %u", comparison, v->qR);
 	return !(((qavg - p->qth_min) >> p->Wlog)*v->dscp_factor* v->qcount < v->qR);
 }
 
@@ -353,12 +347,10 @@ static inline int red_cmp_thresh(const struct red_parms *p, unsigned long qavg)
 	//printk(KERN_INFO "Entered red_cmp_thresh()\n");
 	
 	if (qavg < p->qth_min){
-		printk(KERN_INFO "Queue %u below minimum threshold %u\n", qavg, p->qth_min);
 		return RED_BELOW_MIN_THRESH;}
 	else if (qavg >= p->qth_max)
 		return RED_ABOVE_MAX_TRESH;
 	else{
-		printk(KERN_INFO "Queue between thresholds");
 		return RED_BETWEEN_TRESH;} 
 
 }
