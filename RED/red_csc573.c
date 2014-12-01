@@ -64,9 +64,9 @@ static int red_csc573_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	// Read dscp bits from a IP packet.
 	q->parms.dscp = ipv4_get_dsfield(ip_hdr(skb));
 	q->parms.dscp = q->parms.dscp & 0xFC;
-	if(q->parms.dscp == 48)	q->vars.dscp_factor = 0.5;
-	if(q->parms.dscp == 68)	q->vars.dscp_factor = 0.7;
-	if(q->parms.dscp == 0)	q->vars.dscp_factor = 0.9;
+	if(q->parms.dscp == 48)	q->vars.dscp_factor = 3;
+	if(q->parms.dscp == 68)	q->vars.dscp_factor = 2;
+	if(q->parms.dscp == 0)	q->vars.dscp_factor = 1;
 	
 	q->vars.qavg = red_calc_qavg(&q->parms,
 				     &q->vars,
