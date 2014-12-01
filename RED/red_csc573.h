@@ -333,7 +333,7 @@ static inline int red_mark_probability(const struct red_parms *p,
 
 	   Any questions? --ANK (980924)
 	 */
-	return !(((qavg - p->qth_min) >> p->Wlog)*v->dscp_factor* v->qcount < v->qR);
+	return !((((qavg - p->qth_min) >> p->Wlog)* v->qcount)/v->dscp_factor < v->qR);
 }
 
 enum {
